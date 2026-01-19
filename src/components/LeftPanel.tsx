@@ -37,7 +37,7 @@ const LeftPanel: React.FC = () => {
       </div>
       
       <div className="flex flex-col gap-3">
-        {modes.map((mode, index) => (
+        {modes.map((mode) => (
           <GlassCard 
             key={mode.id}
             variant={selectedMode === mode.id ? 'active' : 'dark'}

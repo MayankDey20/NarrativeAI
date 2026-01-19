@@ -243,15 +243,6 @@ function App() {
     });
   };
 
-  const handleContinue = () => {
-    // Continue the story with new content
-    const continuation = `\n\nAnd so the tale continued, weaving new threads into the narrative tapestry. The path forward was uncertain, but the journey had only just begun.`;
-    setCurrentStory({
-      ...currentStory,
-      content: currentStory.content + continuation
-    });
-  };
-
   const handleInsert = (choiceId: number) => {
     const selectedChoice = choices.find(c => c.id === choiceId);
     if (selectedChoice) {
