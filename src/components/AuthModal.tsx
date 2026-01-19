@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../config/api';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -45,7 +46,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin, onRegis
 
   const handleSocialLogin = (provider: 'google' | 'apple' | 'facebook') => {
     setError('');
-    onLogin('', undefined, provider);
+    
+    if (provider === 'google') {
+      // Redirect to backend Google OAuth
+      window.location.href = `${API_URL}/api/auth/google`;
+    } else {
+      const providerNames = {
+        apple: 'Apple',
+        facebook: 'Facebook'
+      };
+      setError(`${providerNames[provider]} OAuth integration is not yet implemented. Please use email/password or Google to sign in.`);
+    }
   };
 
   const resetForm = () => {

@@ -5,7 +5,9 @@ import LeftPanel from './components/LeftPanel';
 import CenterPanel from './components/CenterPanel';
 import RightPanel from './components/RightPanel';
 import AuthModal from './components/AuthModal';
+import SuccessModal from './components/SuccessModal';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
+import { API_URL } from './config/api';
 import { Story, Choice } from './data/mockData';
 import { mockStory, savedStories, generateChoices } from './data/mockData';
 
@@ -25,6 +27,8 @@ function App() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [creativity, setCreativity] = useState(7);
@@ -32,6 +36,37 @@ function App() {
 
   // Check for saved session on mount
   useEffect(() => {
+    // Check for OAuth callback parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const userParam = urlParams.get('user');
+    const error = urlParams.get('error');
+
+    if (error) {
+      alert('Authentication failed. Please try again.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    if (token && userParam) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(userParam));
+        setUser(userData);
+        setIsLoggedIn(true);
+        localStorage.setItem('narrativeflow_user', JSON.stringify(userData));
+        localStorage.setItem('narrativeflow_token', token);
+        localStorage.setItem('narrativeflow_loggedIn', 'true');
+        setShowAuthModal(false);
+        
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (err) {
+        console.error('Failed to parse user data:', err);
+      }
+      return;
+    }
+
+    // Check for existing saved session
     const savedUser = localStorage.getItem('narrativeflow_user');
     const savedLoginState = localStorage.getItem('narrativeflow_loggedIn');
     if (savedUser && savedLoginState === 'true') {
@@ -119,79 +154,70 @@ function App() {
     }
   };
 
-  const handleLogin = (email: string, password?: string, provider?: string) => {
+  const handleLogin = async (email: string, password?: string, provider?: string) => {
     if (provider) {
-      // Social login
-      const providerNames: Record<string, string> = {
-        google: 'Google',
-        apple: 'Apple',
-        facebook: 'Facebook'
-      };
-      
-      const socialUser: User = {
-        email: `${provider}@example.com`,
-        name: `${providerNames[provider]} User`,
-        provider: provider as 'google' | 'apple' | 'facebook'
-      };
-      
-      setUser(socialUser);
-      setIsLoggedIn(true);
-      localStorage.setItem('narrativeflow_user', JSON.stringify(socialUser));
-      localStorage.setItem('narrativeflow_loggedIn', 'true');
-      setShowAuthModal(false);
-      
-      // Simulate OAuth flow
-      setTimeout(() => {
-        alert(`Successfully signed in with ${providerNames[provider]}!`);
-      }, 300);
-    } else {
-      // Email/password login
-      const savedUsers = JSON.parse(localStorage.getItem('narrativeflow_users') || '[]');
-      const foundUser = savedUsers.find((u: User) => u.email === email);
-      
-      if (foundUser) {
-        if (password && foundUser.password === password) {
-          const { password: _, ...userWithoutPassword } = foundUser;
-          setUser(userWithoutPassword);
-          setIsLoggedIn(true);
-          localStorage.setItem('narrativeflow_user', JSON.stringify(userWithoutPassword));
-          localStorage.setItem('narrativeflow_loggedIn', 'true');
-          setShowAuthModal(false);
-        } else {
-          alert('Invalid password');
-        }
+      // OAuth login handled by redirect in AuthModal
+      return;
+    }
+    
+    // Email/password login via backend API
+    try {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUser(data.user);
+        setIsLoggedIn(true);
+        localStorage.setItem('narrativeflow_user', JSON.stringify(data.user));
+        localStorage.setItem('narrativeflow_token', data.token);
+        localStorage.setItem('narrativeflow_loggedIn', 'true');
+        setShowAuthModal(false);
+        setSuccessMessage('Successfully logged in!');
+        setShowSuccessModal(true);
       } else {
-        alert('User not found. Please register first.');
+        alert(data.message || 'Login failed');
       }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed. Please check your connection.');
     }
   };
 
-  const handleRegister = (email: string, password: string, name: string) => {
-    const savedUsers = JSON.parse(localStorage.getItem('narrativeflow_users') || '[]');
-    
-    if (savedUsers.find((u: User & { password?: string }) => u.email === email)) {
-      alert('Email already registered. Please login instead.');
-      return;
+  const handleRegister = async (email: string, password: string, name: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUser(data.user);
+        setIsLoggedIn(true);
+        localStorage.setItem('narrativeflow_user', JSON.stringify(data.user));
+        localStorage.setItem('narrativeflow_token', data.token);
+        localStorage.setItem('narrativeflow_loggedIn', 'true');
+        setShowAuthModal(false);
+        setSuccessMessage('Account created successfully!');
+        setShowSuccessModal(true);
+      } else {
+        alert(data.message || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Registration failed. Please check your connection.');
     }
-
-    const newUser: User & { password: string } = {
-      email,
-      name,
-      password,
-      provider: 'email'
-    };
-
-    savedUsers.push(newUser);
-    localStorage.setItem('narrativeflow_users', JSON.stringify(savedUsers));
-
-    const { password: _, ...userWithoutPassword } = newUser;
-    setUser(userWithoutPassword);
-    setIsLoggedIn(true);
-    localStorage.setItem('narrativeflow_user', JSON.stringify(userWithoutPassword));
-    localStorage.setItem('narrativeflow_loggedIn', 'true');
-    setShowAuthModal(false);
-    
-    alert('Account created successfully! Welcome to NarrativeFlow.');
   };
 
   const handleRewrite = () => {
@@ -388,7 +414,6 @@ function App() {
                   story={currentStory}
                   onRewrite={handleRewrite}
                   onExpand={handleExpand}
-                  onContinue={handleContinue}
                   onPromptChange={handlePromptChange}
                 />
               </main>
@@ -419,6 +444,11 @@ function App() {
         onClose={() => setShowAuthModal(false)}
         onLogin={handleLogin}
         onRegister={handleRegister}
+      />
+      <SuccessModal
+        isOpen={showSuccessModal}
+        message={successMessage}
+        onClose={() => setShowSuccessModal(false)}
       />
       <KeyboardShortcuts
         isOpen={showShortcuts}

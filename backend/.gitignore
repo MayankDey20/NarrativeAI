@@ -1,18 +1,8 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
 # Dependencies
 node_modules
 
 # Build output
 dist
-dist-ssr
 build
 *.tsbuildinfo
 
@@ -25,32 +15,32 @@ build
 .env.test
 *.env
 !.env.example
-!backend/.env.example
 
-# Local development
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-*.swp
-*.swo
-*~
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Operating System
+.DS_Store
+.DS_Store?
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# Generated files
-/src/generated/prisma
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+.project
+.settings
+.classpath
 
 # Testing
 coverage
@@ -80,7 +70,6 @@ coverage
 *.bak
 *.old
 
-# API keys and secrets (just in case)
-config/secrets.json
-secrets.json
-credentials.json
+# Prisma
+migrations/*.sql
+!migrations/migration_lock.toml

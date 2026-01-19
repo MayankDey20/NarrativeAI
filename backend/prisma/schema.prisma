@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String?        @map("password_hash")
+  name          String
+  provider      String         @default("email")
+  providerId    String?        @map("provider_id")
+  avatarUrl     String?        @map("avatar_url")
+  isVerified    Boolean        @default(false) @map("is_verified")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  lastLoginAt   DateTime?      @map("last_login_at")
+  
+  stories       Story[]
+  generations   AIGeneration[]
+  stats         UserStats?
+
+  @@index([email])
+  @@map("users")
+}
+
+model Story {
+  id             String       @id @default(uuid())
+  userId         String       @map("user_id")
+  title          String
+  content        String       @db.Text
+  genre          String?
+  pov            String?
+  mode           String?
+  wordCount      Int          @default(0) @map("word_count")
+  characterCount Int          @default(0) @map("character_count")
+  creativityLevel Int         @default(7) @map("creativity_level")
+  isDeleted      Boolean      @default(false) @map("is_deleted")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkpoints    Checkpoint[]
+  generations    AIGeneration[]
+
+  @@index([userId])
+  @@index([genre])
+  @@index([createdAt])
+  @@map("stories")
+}
+
+model Checkpoint {
+  id               String   @id @default(uuid())
+  storyId          String   @map("story_id")
+  content          String   @db.Text
+  label            String?
+  wordCount        Int      @default(0) @map("word_count")
+  characterCount   Int      @default(0) @map("character_count")
+  checkpointNumber Int      @map("checkpoint_number")
+  createdAt        DateTime @default(now()) @map("created_at")
+  
+  story            Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+  @@map("checkpoints")
+}
+
+model AIGeneration {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  storyId          String?  @map("story_id")
+  generationType   String   @map("generation_type")
+  prompt           String?  @db.Text
+  generatedContent String?  @map("generated_content") @db.Text
+  modelUsed        String?  @map("model_used")
+  tokensUsed       Int?     @map("tokens_used")
+  generationTimeMs Int?     @map("generation_time_ms")
+  creativityLevel  Int?     @map("creativity_level")
+  temperature      Float?
+  createdAt        DateTime @default(now()) @map("created_at")
+  
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story            Story?   @relation(fields: [storyId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([storyId])
+  @@index([generationType])
+  @@map("ai_generations")
+}
+
+model UserStats {
+  userId          String   @id @map("user_id")
+  totalStories    Int      @default(0) @map("total_stories")
+  totalWords      Int      @default(0) @map("total_words")
+  totalCharacters Int      @default(0) @map("total_characters")
+  totalGenerations Int     @default(0) @map("total_generations")
+  genreFantasy    Int      @default(0) @map("genre_fantasy")
+  genreScifi      Int      @default(0) @map("genre_scifi")
+  genreMystery    Int      @default(0) @map("genre_mystery")
+  genreRomance    Int      @default(0) @map("genre_romance")
+  genreThriller   Int      @default(0) @map("genre_thriller")
+  genreHorror     Int      @default(0) @map("genre_horror")
+  lastUpdated     DateTime @updatedAt @map("last_updated")
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_stats")
+}
