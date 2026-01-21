@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import mistralService from '../services/mistral.service';
+import ollamaService from '../services/ollama.service';
 import prisma from '../config/database';
 
 export class AIController {
@@ -15,7 +15,7 @@ export class AIController {
         });
       }
 
-      const result = await mistralService.generateStory({
+      const result = await ollamaService.generateStory({
         prompt,
         genre,
         pov,
@@ -69,7 +69,7 @@ export class AIController {
         });
       }
 
-      const result = await mistralService.continueStory(currentContent, {
+      const result = await ollamaService.continueStory(currentContent, {
         prompt: '', // Not used for continuation
         genre,
         pov,
@@ -116,7 +116,7 @@ export class AIController {
         });
       }
 
-      const result = await mistralService.generateSummary(content);
+      const result = await ollamaService.generateSummary(content);
 
       // Log generation
       await prisma.aIGeneration.create({
@@ -157,7 +157,7 @@ export class AIController {
         });
       }
 
-      const result = await mistralService.refinePrompt(originalPrompt, genre);
+      const result = await ollamaService.refinePrompt(originalPrompt, genre);
 
       // Log generation
       await prisma.aIGeneration.create({
@@ -197,7 +197,7 @@ export class AIController {
         });
       }
 
-      const result = await mistralService.rewriteContent(content, tone, creativity || 7);
+      const result = await ollamaService.rewriteContent(content, tone, creativity || 7);
 
       // Log generation
       await prisma.aIGeneration.create({
@@ -238,7 +238,7 @@ export class AIController {
         });
       }
 
-      const result = await mistralService.expandContent(content, creativity || 7);
+      const result = await ollamaService.expandContent(content, creativity || 7);
 
       // Log generation
       await prisma.aIGeneration.create({
@@ -279,7 +279,7 @@ export class AIController {
         });
       }
 
-      const choices = await mistralService.generateChoices(
+      const choices = await ollamaService.generateChoices(
         storyContent,
         genre,
         pov,

@@ -45,6 +45,7 @@ function App() {
     if (error) {
       alert('Authentication failed. Please try again.');
       window.history.replaceState({}, document.title, window.location.pathname);
+      setShowAuthModal(true);
       return;
     }
 
@@ -72,6 +73,9 @@ function App() {
     if (savedUser && savedLoginState === 'true') {
       setUser(JSON.parse(savedUser));
       setIsLoggedIn(true);
+    } else {
+      // No saved session, show auth modal
+      setShowAuthModal(true);
     }
   }, []);
 
@@ -386,7 +390,69 @@ function App() {
       
       {/* Main Content */}
       <div className="relative z-10 min-h-screen pt-16 md:pt-20">
-        {view === 'home' ? (
+        {!isLoggedIn ? (
+          // Show welcome screen with login prompt
+          <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
+            <div className="text-center max-w-2xl">
+              <div className="mb-8">
+                <h1 className="text-5xl md:text-6xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-4">
+                  Welcome to NarrativeAI
+                </h1>
+                <p className="text-xl text-slate-300 mb-2">
+                  AI-Powered Interactive Storytelling
+                </p>
+                <p className="text-slate-400">
+                  Create, explore, and shape your own narrative adventures with the power of AI
+                </p>
+              </div>
+              
+              <div className="glass-dark rounded-2xl p-8 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-200 mb-2">AI-Assisted</h3>
+                    <p className="text-sm text-slate-400">Let AI help craft your story with intelligent suggestions</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/20 border-2 border-purple-500 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-200 mb-2">Full Control</h3>
+                    <p className="text-sm text-slate-400">Write freely with complete creative control</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-pink-500/20 border-2 border-pink-500 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-200 mb-2">Choice-Based</h3>
+                    <p className="text-sm text-slate-400">Make decisions that shape your narrative</p>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  Get Started - Sign In or Register
+                </button>
+              </div>
+              
+              <p className="text-sm text-slate-500">
+                Join thousands of storytellers creating amazing narratives
+              </p>
+            </div>
+          </div>
+        ) : view === 'home' ? (
           renderHome()
         ) : (
           <>
@@ -432,7 +498,12 @@ function App() {
       {showAboutModal && renderAbout()}
       <AuthModal
         isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
+        onClose={() => {
+          // Only allow closing if user is logged in
+          if (isLoggedIn) {
+            setShowAuthModal(false);
+          }
+        }}
         onLogin={handleLogin}
         onRegister={handleRegister}
       />

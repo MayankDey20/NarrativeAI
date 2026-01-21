@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -21,6 +21,12 @@ export const config = {
     modelPrimary: process.env.MISTRAL_MODEL_PRIMARY || 'mistral-large-latest',
     modelSecondary: process.env.MISTRAL_MODEL_SECONDARY || 'mistral-medium-latest',
     maxTokens: parseInt(process.env.MISTRAL_MAX_TOKENS || '2000', 10),
+  },
+  
+  ollama: {
+    host: process.env.OLLAMA_HOST || 'http://localhost:11434',
+    model: process.env.OLLAMA_MODEL || 'mistral',
+    maxTokens: parseInt(process.env.OLLAMA_MAX_TOKENS || '2000', 10),
   },
   
   cors: {
