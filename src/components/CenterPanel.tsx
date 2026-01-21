@@ -4,8 +4,7 @@ import { Story } from '../data/mockData';
 
 interface CenterPanelProps {
   story: Story;
-  onRewrite?: () => void;
-  onExpand?: () => void;
+  onRefinePrompt?: () => void;
   onPromptChange?: (prompt: string) => void;
   onGenerate?: () => void;
   onAutoGenerate?: () => void;
@@ -16,8 +15,7 @@ type Genre = 'fantasy' | 'scifi' | 'mystery' | 'romance' | 'thriller' | 'horror'
 
 const CenterPanel: React.FC<CenterPanelProps> = ({ 
   story, 
-  onRewrite, 
-  onExpand, 
+  onRefinePrompt,
   onPromptChange,
   onGenerate,
   onAutoGenerate,
@@ -132,14 +130,6 @@ const CenterPanel: React.FC<CenterPanelProps> = ({
                 Auto Generate
               </Button>
               <Button 
-                variant="secondary"
-                onClick={() => {}}
-                className="flex-1 text-sm py-2"
-              >
-                <span className="mr-1.5">⟲</span>
-                Reload Checkpoint
-              </Button>
-              <Button 
                 variant="outline"
                 onClick={onGenerateSummary}
                 className="flex-1 text-sm py-2"
@@ -167,7 +157,7 @@ const CenterPanel: React.FC<CenterPanelProps> = ({
               </Button>
               <Button 
                 variant="outline" 
-                onClick={onExpand}
+                onClick={onRefinePrompt}
                 disabled={charCount < 10}
               >
                 Refine Prompt

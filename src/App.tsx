@@ -375,27 +375,47 @@ function App() {
     }
   };
 
-  const handleRewrite = () => {
-    // Simulate rewriting the current paragraph
-    const sentences = currentStory.content.split('. ');
-    if (sentences.length > 0) {
-      const lastSentence = sentences[sentences.length - 1];
-      const rewritten = `[Rewritten] ${lastSentence}`;
-      sentences[sentences.length - 1] = rewritten;
-      setCurrentStory({
-        ...currentStory,
-        content: sentences.join('. ')
-      });
-    }
-  };
 
-  const handleExpand = () => {
-    // Add new content to expand the story
-    const expansion = `\n\nThe story deepened as new layers of meaning unfolded. Each word seemed to carry more weight, each sentence building upon the last to create something greater than the sum of its parts.`;
-    setCurrentStory({
-      ...currentStory,
-      content: currentStory.content + expansion
-    });
+
+  const handleRefinePrompt = async () => {
+    const token = localStorage.getItem('narrativeflow_token');
+    if (!token) {
+      alert('Please login to refine prompts');
+      return;
+    }
+
+    if (!currentStory.content || currentStory.content.length < 10) {
+      alert('Please enter a story prompt first');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/ai/refine-prompt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          originalPrompt: currentStory.content,
+          genre: currentStory.genre || 'fantasy',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setCurrentStory({
+          ...currentStory,
+          content: data.refinedPrompt,
+        });
+      } else {
+        alert(data.message || 'Prompt refinement failed');
+      }
+    } catch (error) {
+      console.error('Refine error:', error);
+      alert('Failed to refine prompt. Please try again.');
+    }
   };
 
   const handleInsert = (choiceId: number) => {
@@ -424,11 +444,9 @@ function App() {
 
   const handlePOVChange = (value: string) => {
     setPov(value);
-    // Adjust story content based on POV (simplified)
-    if (value === 'first') {
-      // Convert to first person (simplified example)
-      const firstPerson = currentStory.content.replace(/\b(She|He|They)\b/g, 'I');
-      setCurrentStory({ ...currentStory, content: firstPerson });
+    // Regenerate choices with new POV
+    if (currentStory.content.length > 50) {
+      handleGenerateChoices();
     }
   };
 
@@ -621,8 +639,7 @@ function App() {
               <main className="md:col-span-6 h-[600px] md:h-auto md:max-h-screen overflow-hidden order-2 md:order-2">
                 <CenterPanel
                   story={currentStory}
-                  onRewrite={handleRewrite}
-                  onExpand={handleExpand}
+                  onRefinePrompt={handleRefinePrompt}
                   onPromptChange={handlePromptChange}
                   onGenerate={handleGenerateStory}
                   onAutoGenerate={handleAutoGenerate}
