@@ -403,22 +403,23 @@ function App() {
     if (selectedChoice) {
       // Insert the choice text into the story
       const insertion = `\n\n${selectedChoice.text}`;
+      const newContent = currentStory.content + insertion;
       setCurrentStory({
         ...currentStory,
-        content: currentStory.content + insertion
+        content: newContent
       });
       
-      // Generate new choices after insertion
-      setTimeout(() => {
-        setChoices(generateChoices(currentStory.content + insertion));
-      }, 100);
+      // Generate new choices after insertion using AI
+      handleGenerateChoices(newContent);
     }
   };
 
   const handleCreativityChange = (value: number) => {
     setCreativity(value);
-    // Regenerate choices with new creativity level
-    setChoices(generateChoices(currentStory.content));
+    // Regenerate choices with new creativity level using AI
+    if (currentStory.content.length > 50) {
+      handleGenerateChoices();
+    }
   };
 
   const handlePOVChange = (value: string) => {

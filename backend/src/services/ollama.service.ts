@@ -58,7 +58,7 @@ export class OllamaService {
         options: {
           temperature: temperature,
           top_p: 0.9,
-          num_predict: params.maxTokens || config.ollama.maxTokens,
+          num_predict: params.maxTokens || 600, // Limit initial story to ~600 tokens for interactive storytelling
         },
       });
       
@@ -94,7 +94,7 @@ export class OllamaService {
         options: {
           temperature: temperature,
           top_p: 0.9,
-          num_predict: params.maxTokens || config.ollama.maxTokens,
+          num_predict: params.maxTokens || 400, // Limit continuation to ~400 tokens for interactive storytelling
         },
       });
       

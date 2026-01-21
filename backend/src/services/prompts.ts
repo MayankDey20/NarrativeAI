@@ -22,11 +22,11 @@ export function buildSystemPrompt(genre: string, pov: string): string {
   const genrePrompt = SYSTEM_PROMPTS[genre as keyof typeof SYSTEM_PROMPTS] || SYSTEM_PROMPTS.fantasy;
   const povInstruction = POV_INSTRUCTIONS[pov as keyof typeof POV_INSTRUCTIONS] || POV_INSTRUCTIONS.third;
   
-  return `${genrePrompt}\n\n${povInstruction}\n\nIMPORTANT: Focus on compelling storytelling with strong narrative voice, vivid imagery, and engaging prose. Make every word count.`;
+  return `${genrePrompt}\n\n${povInstruction}\n\nIMPORTANT: Create an engaging story opening (3-5 paragraphs) that sets up the premise, introduces the main character(s), and establishes the initial situation. End at a point where the story could branch in multiple directions. DO NOT write the complete story - leave room for reader choices and continuation.`;
 }
 
 export function buildContinuationPrompt(currentStory: string): string {
-  return `Continue this story seamlessly from where it left off. Maintain the same tone, style, and narrative voice. DO NOT repeat what has already been written. Start with fresh content that naturally flows from the previous text.\n\nCurrent story:\n${currentStory.slice(-2000)}`;
+  return `Continue this story seamlessly from where it left off. Write 2-3 paragraphs that advance the plot. Maintain the same tone, style, and narrative voice. DO NOT repeat what has already been written. End at a natural stopping point where the story could branch in different directions.\n\nCurrent story:\n${currentStory.slice(-2000)}`;
 }
 
 export function buildSummaryPrompt(storyContent: string): string {
