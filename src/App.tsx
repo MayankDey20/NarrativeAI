@@ -224,6 +224,157 @@ function App() {
     }
   };
 
+  const handleGenerateStory = async () => {
+    const token = localStorage.getItem('narrativeflow_token');
+    if (!token) {
+      alert('Please login to generate stories');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/ai/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prompt: currentStory.content,
+          genre: currentStory.genre || 'fantasy',
+          pov: pov,
+          creativity: creativity,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setCurrentStory({
+          ...currentStory,
+          content: data.generatedStory,
+        });
+        // Generate new choices based on the story
+        handleGenerateChoices(data.generatedStory);
+      } else {
+        alert(data.message || 'Story generation failed');
+      }
+    } catch (error) {
+      console.error('Generation error:', error);
+      alert('Failed to generate story. Please try again.');
+    }
+  };
+
+  const handleAutoGenerate = async () => {
+    const token = localStorage.getItem('narrativeflow_token');
+    if (!token) {
+      alert('Please login to auto-generate');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/ai/auto-generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentContent: currentStory.content,
+          genre: currentStory.genre || 'fantasy',
+          pov: pov,
+          creativity: creativity,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setCurrentStory({
+          ...currentStory,
+          content: currentStory.content + '\n\n' + data.continuation,
+        });
+        // Generate new choices
+        handleGenerateChoices(currentStory.content + '\n\n' + data.continuation);
+      } else {
+        alert(data.message || 'Auto-generation failed');
+      }
+    } catch (error) {
+      console.error('Auto-generation error:', error);
+      alert('Failed to auto-generate. Please try again.');
+    }
+  };
+
+  const handleGenerateChoices = async (storyContent?: string) => {
+    const token = localStorage.getItem('narrativeflow_token');
+    if (!token) return;
+
+    const content = storyContent || currentStory.content;
+    if (!content || content.length < 50) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/ai/choices`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          storyContent: content,
+          genre: currentStory.genre || 'fantasy',
+          pov: pov,
+          creativity: creativity,
+          numberOfChoices: 4,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.choices) {
+        setChoices(data.choices);
+      }
+    } catch (error) {
+      console.error('Choices generation error:', error);
+      // Keep existing mock choices on error
+    }
+  };
+
+  const handleGenerateSummary = async () => {
+    const token = localStorage.getItem('narrativeflow_token');
+    if (!token) {
+      alert('Please login to generate summary');
+      return;
+    }
+
+    if (!currentStory.content || currentStory.content.length < 50) {
+      alert('Story is too short to summarize');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/ai/summary`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          content: currentStory.content,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Story Summary:\n\n${data.summary}`);
+      } else {
+        alert(data.message || 'Summary generation failed');
+      }
+    } catch (error) {
+      console.error('Summary error:', error);
+      alert('Failed to generate summary. Please try again.');
+    }
+  };
+
   const handleRewrite = () => {
     // Simulate rewriting the current paragraph
     const sentences = currentStory.content.split('. ');
@@ -472,6 +623,9 @@ function App() {
                   onRewrite={handleRewrite}
                   onExpand={handleExpand}
                   onPromptChange={handlePromptChange}
+                  onGenerate={handleGenerateStory}
+                  onAutoGenerate={handleAutoGenerate}
+                  onGenerateSummary={handleGenerateSummary}
                 />
               </main>
 

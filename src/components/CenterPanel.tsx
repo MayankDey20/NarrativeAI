@@ -7,6 +7,9 @@ interface CenterPanelProps {
   onRewrite?: () => void;
   onExpand?: () => void;
   onPromptChange?: (prompt: string) => void;
+  onGenerate?: () => void;
+  onAutoGenerate?: () => void;
+  onGenerateSummary?: () => void;
 }
 
 type Genre = 'fantasy' | 'scifi' | 'mystery' | 'romance' | 'thriller' | 'horror';
@@ -15,7 +18,10 @@ const CenterPanel: React.FC<CenterPanelProps> = ({
   story, 
   onRewrite, 
   onExpand, 
-  onPromptChange
+  onPromptChange,
+  onGenerate,
+  onAutoGenerate,
+  onGenerateSummary
 }) => {
   const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -37,10 +43,14 @@ const CenterPanel: React.FC<CenterPanelProps> = ({
     { id: 'horror' as Genre, label: 'Horror' },
   ];
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    if (!onGenerate) return;
     setIsGenerating(true);
-    onRewrite?.();
-    setTimeout(() => setIsGenerating(false), 2000);
+    try {
+      await onGenerate();
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -115,7 +125,7 @@ const CenterPanel: React.FC<CenterPanelProps> = ({
             <div className="flex gap-2">
               <Button 
                 variant="secondary"
-                onClick={() => {}}
+                onClick={onAutoGenerate}
                 className="flex-1 text-sm py-2"
               >
                 <span className="mr-1.5">↻</span>
@@ -131,7 +141,7 @@ const CenterPanel: React.FC<CenterPanelProps> = ({
               </Button>
               <Button 
                 variant="outline"
-                onClick={() => {}}
+                onClick={onGenerateSummary}
                 className="flex-1 text-sm py-2"
               >
                 <span className="mr-1.5">📋</span>
@@ -158,6 +168,7 @@ const CenterPanel: React.FC<CenterPanelProps> = ({
               <Button 
                 variant="outline" 
                 onClick={onExpand}
+                disabled={charCount < 10}
               >
                 Refine Prompt
               </Button>
