@@ -375,7 +375,139 @@ function App() {
     }
   };
 
+  const handleSaveStory = async (): Promise<string | null> => {
+    const token = localStorage.getItem('narrativeflow_token');
+    if (!token) {
+      alert('Please login to save stories');
+      return null;
+    }
 
+    try {
+      // If story doesn't have ID, create it
+      if (!currentStory.id) {
+        const response = await fetch(`${API_URL}/api/stories`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: currentStory.title || 'Untitled Story',
+            content: currentStory.content,
+            genre: currentStory.genre || 'fantasy',
+          }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          setCurrentStory({ ...currentStory, id: data.story.id });
+          return data.story.id;
+        }
+      } else {
+        // Update existing story
+        const response = await fetch(`${API_URL}/api/stories/${currentStory.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            content: currentStory.content,
+          }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          return currentStory.id;
+        }
+      }
+    } catch (error) {
+      console.error('Save story error:', error);
+      alert('Failed to save story. Please try again.');
+    }
+    return null;
+  };
+
+  const handleSaveCheckpoint = async (label?: string) => {
+    const storyId = await handleSaveStory();
+    if (!storyId) return;
+
+    const token = localStorage.getItem('narrativeflow_token');
+    try {
+      const response = await fetch(`${API_URL}/api/stories/${storyId}/checkpoints`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          content: currentStory.content,
+          label: label || `Checkpoint ${new Date().toLocaleString()}`,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccessMessage('Checkpoint saved successfully!');
+        setShowSuccessModal(true);
+      } else {
+        alert(data.message || 'Failed to save checkpoint');
+      }
+    } catch (error) {
+      console.error('Save checkpoint error:', error);
+      alert('Failed to save checkpoint. Please try again.');
+    }
+  };
+
+  const handleLoadCheckpoint = async () => {
+    if (!currentStory.id) {
+      alert('Please save your story first before loading checkpoints');
+      return;
+    }
+
+    const token = localStorage.getItem('narrativeflow_token');
+    try {
+      // Get all checkpoints
+      const response = await fetch(`${API_URL}/api/stories/${currentStory.id}/checkpoints`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (data.success && data.checkpoints.length > 0) {
+        // For now, load the most recent checkpoint
+        // TODO: Create a modal to let user choose which checkpoint to load
+        const latestCheckpoint = data.checkpoints[0];
+        
+        const checkpointResponse = await fetch(
+          `${API_URL}/api/stories/${currentStory.id}/checkpoints/${latestCheckpoint.id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+
+        const checkpointData = await checkpointResponse.json();
+        if (checkpointData.success) {
+          setCurrentStory({
+            ...currentStory,
+            content: checkpointData.checkpoint.content,
+          });
+          setSuccessMessage('Checkpoint loaded successfully!');
+          setShowSuccessModal(true);
+          // Regenerate choices for loaded content
+          handleGenerateChoices(checkpointData.checkpoint.content);
+        }
+      } else {
+        alert('No checkpoints found. Save a checkpoint first!');
+      }
+    } catch (error) {
+      console.error('Load checkpoint error:', error);
+      alert('Failed to load checkpoint. Please try again.');
+    }
+  };
 
   const handleRefinePrompt = async () => {
     const token = localStorage.getItem('narrativeflow_token');
@@ -418,19 +550,56 @@ function App() {
     }
   };
 
-  const handleInsert = (choiceId: number) => {
+  const handleInsert = async (choiceId: number) => {
     const selectedChoice = choices.find(c => c.id === choiceId);
-    if (selectedChoice) {
-      // Insert the choice text into the story
-      const insertion = `\n\n${selectedChoice.text}`;
-      const newContent = currentStory.content + insertion;
-      setCurrentStory({
-        ...currentStory,
-        content: newContent
+    if (!selectedChoice) return;
+
+    const token = localStorage.getItem('narrativeflow_token');
+    if (!token) {
+      alert('Please login to continue story');
+      return;
+    }
+
+    try {
+      // Call choice-aware continuation endpoint
+      const response = await fetch(`${API_URL}/api/ai/continue-from-choice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          storyId: currentStory.id || null,
+          currentContent: currentStory.content,
+          selectedChoice: selectedChoice.text,
+          genre: currentStory.genre || 'fantasy',
+          pov: pov,
+          creativity: creativity,
+        }),
       });
-      
-      // Generate new choices after insertion using AI
-      handleGenerateChoices(newContent);
+
+      const data = await response.json();
+
+      if (data.success) {
+        const newContent = currentStory.content + '\n\n' + data.continuation;
+        setCurrentStory({
+          ...currentStory,
+          content: newContent,
+        });
+        
+        // Auto-save story after choice
+        if (currentStory.id) {
+          handleSaveStory();
+        }
+        
+        // Generate new choices
+        handleGenerateChoices(newContent);
+      } else {
+        alert(data.message || 'Failed to continue story');
+      }
+    } catch (error) {
+      console.error('Choice continuation error:', error);
+      alert('Failed to continue from choice. Please try again.');
     }
   };
 
@@ -644,6 +813,8 @@ function App() {
                   onGenerate={handleGenerateStory}
                   onAutoGenerate={handleAutoGenerate}
                   onGenerateSummary={handleGenerateSummary}
+                  onSaveCheckpoint={handleSaveCheckpoint}
+                  onLoadCheckpoint={handleLoadCheckpoint}
                 />
               </main>
 

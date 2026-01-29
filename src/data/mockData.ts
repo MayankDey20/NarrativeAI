@@ -1,6 +1,11 @@
 export interface Story {
+  id?: string;           // Database ID
   title: string;
   content: string;
+  genre?: string;        // Story genre
+  wordCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Choice {

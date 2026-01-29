@@ -9,6 +9,8 @@ interface CenterPanelProps {
   onGenerate?: () => void;
   onAutoGenerate?: () => void;
   onGenerateSummary?: () => void;
+  onSaveCheckpoint?: () => void;
+  onLoadCheckpoint?: () => void;
 }
 
 type Genre = 'fantasy' | 'scifi' | 'mystery' | 'romance' | 'thriller' | 'horror';
@@ -19,7 +21,9 @@ const CenterPanel: React.FC<CenterPanelProps> = ({
   onPromptChange,
   onGenerate,
   onAutoGenerate,
-  onGenerateSummary
+  onGenerateSummary,
+  onSaveCheckpoint,
+  onLoadCheckpoint
 }) => {
   const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -128,6 +132,22 @@ const CenterPanel: React.FC<CenterPanelProps> = ({
               >
                 <span className="mr-1.5">↻</span>
                 Auto Generate
+              </Button>
+              <Button 
+                variant="secondary"
+                onClick={onSaveCheckpoint}
+                className="flex-1 text-sm py-2"
+              >
+                <span className="mr-1.5">💾</span>
+                Save Checkpoint
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={onLoadCheckpoint}
+                className="flex-1 text-sm py-2"
+              >
+                <span className="mr-1.5">⟲</span>
+                Load Checkpoint
               </Button>
               <Button 
                 variant="outline"

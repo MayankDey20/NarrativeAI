@@ -9,6 +9,7 @@ router.use(authenticate);
 
 router.post('/generate', aiController.generateStory.bind(aiController));
 router.post('/auto-generate', aiController.autoGenerate.bind(aiController));
+router.post('/continue-from-choice', aiController.continueFromChoice.bind(aiController));
 router.post('/summary', aiController.generateSummary.bind(aiController));
 router.post('/refine-prompt', aiController.refinePrompt.bind(aiController));
 router.post('/rewrite', aiController.rewrite.bind(aiController));

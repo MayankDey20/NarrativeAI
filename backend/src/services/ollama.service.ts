@@ -114,6 +114,43 @@ export class OllamaService {
     }
   }
 
+  async continueFromChoice(currentStory: string, selectedChoice: string, params: GenerateStoryParams): Promise<AIResponse> {
+    const startTime = Date.now();
+    const systemPrompt = buildSystemPrompt(params.genre, params.pov);
+    const temperature = mapCreativityToTemperature(params.creativity);
+    
+    const choicePrompt = `Story so far:\n${currentStory.slice(-2000)}\n\nThe character/narrative takes this direction: "${selectedChoice}"\n\nContinue the story seamlessly from this choice. Write 2-3 paragraphs that show the consequences and advance the narrative. Maintain the same tone and style. End at a natural stopping point where new choices could emerge.`;
+    
+    try {
+      const response = await this.client.chat({
+        model: this.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: choicePrompt }
+        ],
+        options: {
+          temperature: temperature,
+          top_p: 0.9,
+          num_predict: params.maxTokens || 400,
+        },
+      });
+      
+      const generationTime = Date.now() - startTime;
+      const content = response.message.content;
+      
+      return {
+        content,
+        metadata: {
+          tokensUsed: response.eval_count || 0,
+          generationTime,
+          model: this.model,
+        },
+      };
+    } catch (error: any) {
+      throw new Error(`Ollama error: ${error.message}`);
+    }
+  }
+
   async generateSummary(storyContent: string): Promise<AIResponse> {
     const startTime = Date.now();
     const summaryPrompt = buildSummaryPrompt(storyContent);

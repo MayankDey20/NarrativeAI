@@ -104,6 +104,53 @@ export class AIController {
     }
   }
 
+  async continueFromChoice(req: Request, res: Response) {
+    try {
+      const userId = (req as any).userId;
+      const { storyId, currentContent, selectedChoice, genre, pov, creativity } = req.body;
+
+      if (!currentContent || !selectedChoice || !genre || !pov) {
+        return res.status(400).json({
+          success: false,
+          message: 'Current content, selected choice, genre, and pov are required',
+        });
+      }
+
+      const result = await ollamaService.continueFromChoice(currentContent, selectedChoice, {
+        prompt: '',
+        genre,
+        pov,
+        creativity: creativity || 7,
+      });
+
+      // Log generation
+      await prisma.aIGeneration.create({
+        data: {
+          userId,
+          storyId: storyId || null,
+          generationType: 'choice-continuation',
+          prompt: `Choice: ${selectedChoice}`,
+          generatedContent: result.content,
+          modelUsed: result.metadata.model,
+          tokensUsed: result.metadata.tokensUsed,
+          generationTimeMs: result.metadata.generationTime,
+          creativityLevel: creativity || 7,
+        },
+      });
+
+      res.json({
+        success: true,
+        continuation: result.content,
+        metadata: result.metadata,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
   async generateSummary(req: Request, res: Response) {
     try {
       const userId = (req as any).userId;
